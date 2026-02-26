@@ -3,5 +3,7 @@ node_modules/
 .wwebjs_cache/
 .env
 database.sqlite
+database.sqlite-shm
+database.sqlite-wal
 public/
 dist/
