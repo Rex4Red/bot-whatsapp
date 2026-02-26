@@ -1,0 +1,32 @@
+{
+  "name": "bot-whatsapp",
+  "version": "1.0.0",
+  "description": "WhatsApp Bot Notification System with Dashboard",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "dev:dashboard": "cd dashboard && npx vite",
+    "build:dashboard": "cd dashboard && npx vite build --outDir ../public"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "notification"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "vite": "^7.3.1"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.3",
+    "whatsapp-web.js": "^1.34.6"
+  }
+}
