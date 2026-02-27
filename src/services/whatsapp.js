@@ -1,6 +1,33 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 const { insertMessageLog, updateMessageLog } = require('./database');
+
+// Clean up Chromium lock files left by previous container
+function cleanupLockFiles() {
+    const sessionDir = path.join(process.cwd(), '.wwebjs_auth');
+    if (!fs.existsSync(sessionDir)) return;
+
+    const findAndRemoveLocks = (dir) => {
+        try {
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+                if (entry.isDirectory()) {
+                    findAndRemoveLocks(fullPath);
+                } else if (entry.name === 'SingletonLock' || entry.name === 'SingletonCookie' || entry.name === 'SingletonSocket') {
+                    fs.unlinkSync(fullPath);
+                    console.log('[WhatsApp] Removed lock file:', fullPath);
+                }
+            }
+        } catch (err) {
+            // ignore
+        }
+    };
+
+    findAndRemoveLocks(sessionDir);
+}
 
 let client = null;
 let io = null;
@@ -37,6 +64,9 @@ function formatPhoneNumber(phone) {
 
 async function initialize(socketIO) {
     io = socketIO;
+
+    // Remove stale Chromium lock files from previous container
+    cleanupLockFiles();
 
     const puppeteerConfig = {
         headless: true,
