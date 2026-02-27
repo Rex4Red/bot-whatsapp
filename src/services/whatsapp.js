@@ -2,31 +2,24 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const { insertMessageLog, updateMessageLog } = require('./database');
 
 // Clean up Chromium lock files left by previous container
 function cleanupLockFiles() {
-    const sessionDir = path.join(process.cwd(), '.wwebjs_auth');
-    if (!fs.existsSync(sessionDir)) return;
-
-    const findAndRemoveLocks = (dir) => {
-        try {
-            const entries = fs.readdirSync(dir, { withFileTypes: true });
-            for (const entry of entries) {
-                const fullPath = path.join(dir, entry.name);
-                if (entry.isDirectory()) {
-                    findAndRemoveLocks(fullPath);
-                } else if (entry.name === 'SingletonLock' || entry.name === 'SingletonCookie' || entry.name === 'SingletonSocket') {
-                    fs.unlinkSync(fullPath);
-                    console.log('[WhatsApp] Removed lock file:', fullPath);
-                }
-            }
-        } catch (err) {
-            // ignore
-        }
-    };
-
-    findAndRemoveLocks(sessionDir);
+    console.log('[WhatsApp] Cleaning up stale Chromium lock files...');
+    try {
+        // Use system find to remove ALL Singleton* files anywhere in auth dir
+        execSync('find /app/.wwebjs_auth -name "Singleton*" -type f -delete 2>/dev/null || true');
+        execSync('find /app/.wwebjs_auth -name "lockfile" -type f -delete 2>/dev/null || true');
+        // Also clean from current working directory (in case it differs)
+        const cwd = process.cwd();
+        execSync(`find ${cwd}/.wwebjs_auth -name "Singleton*" -type f -delete 2>/dev/null || true`);
+        execSync(`find ${cwd}/.wwebjs_auth -name "lockfile" -type f -delete 2>/dev/null || true`);
+        console.log('[WhatsApp] Lock file cleanup completed');
+    } catch (err) {
+        console.log('[WhatsApp] Lock file cleanup skipped (no auth dir yet)');
+    }
 }
 
 let client = null;
