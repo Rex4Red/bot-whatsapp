@@ -1,13 +1,4 @@
-# ---- Stage 1: Build dashboard ----
-FROM node:20-slim AS dashboard-builder
-
-WORKDIR /app/dashboard
-COPY dashboard/package.json ./
-RUN npm install && npm install vite
-COPY dashboard/ ./
-RUN npx vite build --outDir /app/public
-
-# ---- Stage 2: Production ----
+# ---- Single stage: Production ----
 FROM node:20-slim
 
 # Install Chromium and all dependencies for whatsapp-web.js (Puppeteer)
@@ -42,10 +33,6 @@ RUN apt-get update && apt-get install -y \
 # Tell Puppeteer to use system Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV DATA_DIR=/app/data
-
-# Auto-detect Chromium path (different distros use different paths)
-RUN CHROMIUM_PATH=$(which chromium || which chromium-browser) \
-    && echo "PUPPETEER_EXECUTABLE_PATH=$CHROMIUM_PATH" >> /etc/environment
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 WORKDIR /app
@@ -57,11 +44,8 @@ RUN npm install --omit=dev
 # Copy source code
 COPY src/ ./src/
 
-# Copy built dashboard from stage 1
-COPY --from=dashboard-builder /app/public ./public/
-
-# Copy env example
-COPY .env.example ./.env.example
+# Copy dashboard files directly as static files (no build step needed)
+COPY dashboard/index.html dashboard/style.css dashboard/main.js ./public/
 
 # Create data directory
 RUN mkdir -p /app/data
