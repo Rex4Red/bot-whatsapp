@@ -47,13 +47,19 @@ async function initialize(socketIO) {
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--disable-gpu',
+            '--single-process',
+            '--no-zygote',
+            '--disable-extensions',
         ],
     };
 
     // Use system Chromium in Docker
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
         puppeteerConfig.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+        console.log('[WhatsApp] Using Chromium at:', process.env.PUPPETEER_EXECUTABLE_PATH);
     }
+
+    console.log('[WhatsApp] Initializing client...');
 
     client = new Client({
         authStrategy: new LocalAuth(),
