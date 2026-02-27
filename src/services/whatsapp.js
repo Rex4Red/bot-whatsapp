@@ -6,16 +6,19 @@ const { execSync } = require('child_process');
 const { insertMessageLog, updateMessageLog } = require('./database');
 
 // Clean up Chromium lock files left by previous container
+// SingletonLock is a SYMLINK, SingletonSocket is a SOCKET — NOT regular files!
 function cleanupLockFiles() {
     console.log('[WhatsApp] Cleaning up stale Chromium lock files...');
     try {
-        // Use system find to remove ALL Singleton* files anywhere in auth dir
-        execSync('find /app/.wwebjs_auth -name "Singleton*" -type f -delete 2>/dev/null || true');
-        execSync('find /app/.wwebjs_auth -name "lockfile" -type f -delete 2>/dev/null || true');
+        // Remove ALL Singleton* entries (symlinks, sockets, files) anywhere in auth dir
+        execSync('find /app/.wwebjs_auth -name "Singleton*" -delete 2>/dev/null || true');
+        execSync('find /app/.wwebjs_auth -name "lockfile" -delete 2>/dev/null || true');
         // Also clean from current working directory (in case it differs)
         const cwd = process.cwd();
-        execSync(`find ${cwd}/.wwebjs_auth -name "Singleton*" -type f -delete 2>/dev/null || true`);
-        execSync(`find ${cwd}/.wwebjs_auth -name "lockfile" -type f -delete 2>/dev/null || true`);
+        if (cwd !== '/app') {
+            execSync(`find ${cwd}/.wwebjs_auth -name "Singleton*" -delete 2>/dev/null || true`);
+            execSync(`find ${cwd}/.wwebjs_auth -name "lockfile" -delete 2>/dev/null || true`);
+        }
         console.log('[WhatsApp] Lock file cleanup completed');
     } catch (err) {
         console.log('[WhatsApp] Lock file cleanup skipped (no auth dir yet)');
