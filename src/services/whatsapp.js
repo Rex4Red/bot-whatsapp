@@ -130,12 +130,28 @@ async function initialize(socketIO) {
         console.log('[WhatsApp] Disconnected:', reason);
     });
 
-    try {
-        await client.initialize();
-    } catch (err) {
-        connectionStatus = 'error';
-        io.emit('status', getStatus());
-        console.error('[WhatsApp] Initialization error:', err.message);
+    const MAX_RETRIES = 5;
+    const RETRY_DELAY = 10000; // 10 seconds
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            console.log(`[WhatsApp] Initialization attempt ${attempt}/${MAX_RETRIES}...`);
+            await client.initialize();
+            break; // success
+        } catch (err) {
+            connectionStatus = 'error';
+            io.emit('status', getStatus());
+            console.error(`[WhatsApp] Initialization error (attempt ${attempt}/${MAX_RETRIES}):`, err.message);
+
+            if (attempt < MAX_RETRIES) {
+                console.log(`[WhatsApp] Retrying in ${RETRY_DELAY / 1000} seconds...`);
+                await sleep(RETRY_DELAY);
+                // Cleanup before retry
+                cleanupLockFiles();
+            } else {
+                console.error('[WhatsApp] All retry attempts failed. Please restart the container.');
+            }
+        }
     }
 }
 
