@@ -2,7 +2,11 @@
 // Socket.IO & State
 // ============================
 const API_BASE = '';
-const socket = io();
+const socket = io({
+    transports: ['websocket', 'polling'],
+    reconnectionAttempts: 10,
+    reconnectionDelay: 2000,
+});
 
 let currentPage = 1;
 let currentFilter = '';
@@ -453,11 +457,47 @@ function escapeHtml(text) {
 // ============================
 // Init
 // ============================
+
+// HTTP fallback — fetch status & QR code directly via REST API
+async function pollStatus() {
+    try {
+        const res = await fetch(`${API_BASE}/api/status`);
+        const data = await res.json();
+
+        if (data.success) {
+            updateStatusBadge(data.data.status);
+            updateQrSection(data.data.status);
+
+            // If QR is available, fetch and display it
+            if (data.data.status === 'waiting_qr') {
+                try {
+                    const qrRes = await fetch(`${API_BASE}/api/qr`);
+                    const qrData = await qrRes.json();
+                    if (qrData.success && qrData.data && qrData.data.qr) {
+                        const container = document.getElementById('qrContainer');
+                        container.innerHTML = `<img src="${qrData.data.qr}" alt="QR Code" />`;
+                    }
+                } catch (e) {
+                    // QR not available yet
+                }
+            }
+        }
+    } catch (err) {
+        console.error('Failed to poll status:', err);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadStats();
     loadLogs();
     loadContacts();
 
+    // Immediately poll status via HTTP (fallback for Socket.IO)
+    pollStatus();
+
     // Auto-refresh stats every 30 seconds
     setInterval(loadStats, 30000);
+
+    // Poll status every 5 seconds as Socket.IO fallback
+    setInterval(pollStatus, 5000);
 });
