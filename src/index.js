@@ -1,5 +1,25 @@
 require('dotenv').config();
 
+// Prevent process crash from puppeteer ProtocolError (known whatsapp-web.js issue)
+process.on('unhandledRejection', (reason, promise) => {
+    const msg = reason?.message || String(reason);
+    if (msg.includes('ProtocolError') || msg.includes('No data found for resource')) {
+        console.warn('[WhatsApp] Non-fatal ProtocolError (ignored):', msg);
+    } else {
+        console.error('[Process] Unhandled Rejection:', msg);
+    }
+});
+
+process.on('uncaughtException', (err) => {
+    const msg = err?.message || String(err);
+    if (msg.includes('ProtocolError') || msg.includes('No data found for resource')) {
+        console.warn('[WhatsApp] Non-fatal ProtocolError (ignored):', msg);
+    } else {
+        console.error('[Process] Uncaught Exception:', msg);
+        // Only exit on truly unexpected errors, not puppeteer protocol errors
+    }
+});
+
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
