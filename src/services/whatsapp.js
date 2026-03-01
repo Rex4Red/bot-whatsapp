@@ -267,10 +267,81 @@ async function logout() {
     }
 }
 
+async function getGroups() {
+    if (connectionStatus !== 'connected') {
+        throw new Error('WhatsApp is not connected');
+    }
+
+    const chats = await client.getChats();
+    const groups = chats
+        .filter((chat) => chat.isGroup)
+        .map((chat) => ({
+            id: chat.id._serialized,
+            name: chat.name,
+            participants: chat.participants?.length || 0,
+        }));
+
+    return groups;
+}
+
+async function sendGroupMessage(groupId, message) {
+    if (connectionStatus !== 'connected') {
+        throw new Error('WhatsApp is not connected');
+    }
+
+    // Ensure groupId ends with @g.us
+    const chatId = groupId.includes('@g.us') ? groupId : `${groupId}@g.us`;
+
+    // Log the attempt
+    const logEntry = insertMessageLog.run({
+        phone_number: chatId,
+        message: message,
+        status: 'pending',
+        error: null,
+        type: 'group',
+    });
+
+    try {
+        const chat = await client.getChatById(chatId);
+        if (!chat || !chat.isGroup) {
+            throw new Error('Group not found or invalid group ID');
+        }
+
+        await chat.sendMessage(message);
+
+        updateMessageLog.run({
+            id: logEntry.lastInsertRowid,
+            status: 'sent',
+            error: null,
+        });
+
+        io.emit('message_sent', { id: logEntry.lastInsertRowid, group: chatId, status: 'sent' });
+
+        return { id: logEntry.lastInsertRowid, group: chatId, name: chat.name, status: 'sent' };
+    } catch (err) {
+        updateMessageLog.run({
+            id: logEntry.lastInsertRowid,
+            status: 'failed',
+            error: err.message,
+        });
+
+        io.emit('message_sent', {
+            id: logEntry.lastInsertRowid,
+            group: chatId,
+            status: 'failed',
+            error: err.message,
+        });
+
+        throw err;
+    }
+}
+
 module.exports = {
     initialize,
     sendMessage,
     broadcastMessage,
+    getGroups,
+    sendGroupMessage,
     getStatus,
     getQrCode,
     restart,

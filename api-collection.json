@@ -1,0 +1,323 @@
+{
+    "info": {
+        "name": "WhatsApp Bot API",
+        "description": "API collection untuk Bot WhatsApp Notification System",
+        "base_url": "https://bot-whatsapp.podnet.space",
+        "auth": {
+            "type": "api-key",
+            "header": "x-api-key",
+            "value": "GANTI_DENGAN_API_KEY_KAMU"
+        }
+    },
+    "endpoints": [
+        {
+            "name": "Kirim Pesan (Single)",
+            "method": "POST",
+            "url": "/api/send",
+            "headers": {
+                "Content-Type": "application/json",
+                "x-api-key": "GANTI_DENGAN_API_KEY_KAMU"
+            },
+            "body": {
+                "phone": "6281234567890",
+                "message": "Halo, ini pesan dari bot!"
+            },
+            "response_success": {
+                "success": true,
+                "data": {
+                    "id": "msg_abc123",
+                    "phone": "6281234567890",
+                    "status": "sent"
+                }
+            },
+            "response_error": {
+                "success": false,
+                "error": "WhatsApp is not connected"
+            }
+        },
+        {
+            "name": "Broadcast Pesan (Multi)",
+            "method": "POST",
+            "url": "/api/broadcast",
+            "headers": {
+                "Content-Type": "application/json",
+                "x-api-key": "GANTI_DENGAN_API_KEY_KAMU"
+            },
+            "body": {
+                "phones": [
+                    "6281234567890",
+                    "6289876543210",
+                    "6285551234567"
+                ],
+                "message": "Halo semua, ini pesan broadcast!"
+            },
+            "response_success": {
+                "success": true,
+                "data": {
+                    "total": 3,
+                    "sent": 2,
+                    "failed": 1,
+                    "results": [
+                        {
+                            "phone": "6281234567890",
+                            "status": "sent"
+                        },
+                        {
+                            "phone": "6289876543210",
+                            "status": "sent"
+                        },
+                        {
+                            "phone": "6285551234567",
+                            "status": "failed",
+                            "error": "Number not registered on WhatsApp"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "Cek Status Bot",
+            "method": "GET",
+            "url": "/api/status",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "data": {
+                    "status": "connected",
+                    "uptime": 1234.56,
+                    "hasQrCode": false
+                }
+            },
+            "notes": "Status bisa: connected, disconnected, waiting_qr, authenticated, auth_failure, error"
+        },
+        {
+            "name": "Ambil QR Code",
+            "method": "GET",
+            "url": "/api/qr",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "data": {
+                    "qr": "data:image/png;base64,iVBORw0KGgo..."
+                }
+            },
+            "notes": "QR code dalam format base64 data URL, bisa langsung dipakai di <img src>"
+        },
+        {
+            "name": "Statistik Pesan",
+            "method": "GET",
+            "url": "/api/messages/stats",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "data": {
+                    "sent": 150,
+                    "failed": 3,
+                    "today": 25,
+                    "total": 153
+                }
+            }
+        },
+        {
+            "name": "Log Pesan (Paginated)",
+            "method": "GET",
+            "url": "/api/messages?page=1&limit=15&status=sent",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "data": {
+                    "logs": [
+                        {
+                            "id": 1,
+                            "phone_number": "6281234567890",
+                            "message": "Halo dari bot",
+                            "status": "sent",
+                            "error": null,
+                            "created_at": "2026-02-27T10:00:00"
+                        }
+                    ],
+                    "page": 1,
+                    "limit": 15,
+                    "totalPages": 5,
+                    "total": 70
+                }
+            },
+            "notes": "Filter status: sent, failed, pending. Kosongkan untuk semua."
+        },
+        {
+            "name": "Health Check",
+            "method": "GET",
+            "url": "/api/health",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "message": "Bot WhatsApp is running",
+                "timestamp": "2026-02-27T10:00:00.000Z"
+            }
+        },
+        {
+            "name": "Restart WhatsApp Client",
+            "method": "POST",
+            "url": "/api/restart",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "message": "WhatsApp client is restarting..."
+            }
+        },
+        {
+            "name": "Logout WhatsApp Session",
+            "method": "POST",
+            "url": "/api/logout",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "message": "Logged out. Please scan QR code again."
+            },
+            "notes": "Akan menghapus session, perlu scan QR ulang"
+        },
+        {
+            "name": "Tambah Kontak",
+            "method": "POST",
+            "url": "/api/contacts",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "body": {
+                "name": "John Doe",
+                "phone_number": "6281234567890",
+                "group_name": "customer"
+            },
+            "response_success": {
+                "success": true,
+                "data": {
+                    "id": 1,
+                    "name": "John Doe",
+                    "phone_number": "6281234567890",
+                    "group_name": "customer"
+                }
+            }
+        },
+        {
+            "name": "Lihat Semua Kontak",
+            "method": "GET",
+            "url": "/api/contacts",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "data": [
+                    {
+                        "id": 1,
+                        "name": "John Doe",
+                        "phone_number": "6281234567890",
+                        "group_name": "customer"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Hapus Kontak",
+            "method": "DELETE",
+            "url": "/api/contacts/:id",
+            "headers": {},
+            "body": null,
+            "response_success": {
+                "success": true,
+                "message": "Contact deleted"
+            }
+        },
+        {
+            "name": "Lihat Grup WhatsApp",
+            "method": "GET",
+            "url": "/api/groups",
+            "headers": {
+                "x-api-key": "GANTI_DENGAN_API_KEY_KAMU"
+            },
+            "body": null,
+            "response_success": {
+                "success": true,
+                "data": [
+                    {
+                        "id": "120363012345678901@g.us",
+                        "name": "Grup Keluarga",
+                        "participants": 15
+                    },
+                    {
+                        "id": "120363098765432101@g.us",
+                        "name": "Grup Kantor",
+                        "participants": 30
+                    }
+                ]
+            },
+            "notes": "Menampilkan semua grup yang diikuti oleh nomor WhatsApp bot"
+        },
+        {
+            "name": "Kirim Pesan ke Grup",
+            "method": "POST",
+            "url": "/api/send-group",
+            "headers": {
+                "Content-Type": "application/json",
+                "x-api-key": "GANTI_DENGAN_API_KEY_KAMU"
+            },
+            "body": {
+                "groupId": "120363012345678901@g.us",
+                "message": "Halo grup, ini pesan dari bot!"
+            },
+            "response_success": {
+                "success": true,
+                "data": {
+                    "id": 1,
+                    "group": "120363012345678901@g.us",
+                    "name": "Grup Keluarga",
+                    "status": "sent"
+                }
+            },
+            "notes": "groupId bisa didapat dari endpoint GET /api/groups"
+        },
+        {
+            "name": "Broadcast Pesan ke Banyak Grup",
+            "method": "POST",
+            "url": "/api/broadcast-group",
+            "headers": {
+                "Content-Type": "application/json",
+                "x-api-key": "GANTI_DENGAN_API_KEY_KAMU"
+            },
+            "body": {
+                "groupIds": [
+                    "120363012345678901@g.us",
+                    "120363098765432101@g.us"
+                ],
+                "message": "Broadcast ke semua grup!"
+            },
+            "response_success": {
+                "success": true,
+                "data": {
+                    "total": 2,
+                    "sent": 2,
+                    "failed": 0,
+                    "results": [
+                        {
+                            "group": "120363012345678901@g.us",
+                            "name": "Grup Keluarga",
+                            "status": "sent"
+                        },
+                        {
+                            "group": "120363098765432101@g.us",
+                            "name": "Grup Kantor",
+                            "status": "sent"
+                        }
+                    ]
+                }
+            },
+            "notes": "Delay 2 detik antar grup untuk anti-spam"
+        }
+    ]
+}

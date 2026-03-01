@@ -101,4 +101,87 @@ router.get('/messages/stats', (req, res) => {
     }
 });
 
+// List all WhatsApp groups
+router.get('/groups', apiKeyAuth, async (req, res) => {
+    try {
+        const groups = await whatsapp.getGroups();
+        return res.json({
+            success: true,
+            data: groups,
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+// Send message to a group
+router.post('/send-group', apiKeyAuth, async (req, res) => {
+    try {
+        const { groupId, message } = req.body;
+
+        if (!groupId || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: groupId, message',
+            });
+        }
+
+        const result = await whatsapp.sendGroupMessage(groupId, message);
+
+        return res.json({
+            success: true,
+            data: result,
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
+// Broadcast message to multiple groups
+router.post('/broadcast-group', apiKeyAuth, async (req, res) => {
+    try {
+        const { groupIds, message } = req.body;
+
+        if (!groupIds || !Array.isArray(groupIds) || groupIds.length === 0 || !message) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: groupIds (array), message',
+            });
+        }
+
+        const results = [];
+        for (const groupId of groupIds) {
+            try {
+                const result = await whatsapp.sendGroupMessage(groupId, message);
+                results.push(result);
+            } catch (err) {
+                results.push({ group: groupId, status: 'failed', error: err.message });
+            }
+            // Anti-spam delay
+            if (groupIds.indexOf(groupId) < groupIds.length - 1) {
+                await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
+        }
+
+        const sent = results.filter((r) => r.status === 'sent').length;
+        const failed = results.filter((r) => r.status === 'failed').length;
+
+        return res.json({
+            success: true,
+            data: { total: groupIds.length, sent, failed, results },
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            error: err.message,
+        });
+    }
+});
+
 module.exports = router;
